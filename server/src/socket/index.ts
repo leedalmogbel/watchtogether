@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { verifyToken, AuthPayload } from '../middleware/auth.js';
 import { setupChat } from './chat.js';
 import { setupPresence } from './presence.js';
+import { setupPlayback } from './playback.js';
 
 export let io: Server;
 
@@ -48,6 +49,7 @@ export function setupSocket(httpServer: HttpServer) {
 
       setupChat(socket, slug);
       setupPresence(io, socket, slug);
+      setupPlayback(socket, slug);
     });
 
     socket.on('disconnect', () => {
