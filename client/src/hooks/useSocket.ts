@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSocket } from '../services/socket';
+import { getSocket } from '@/services/socket';
 import type { Socket } from 'socket.io-client';
 
 export function useSocket(channelSlug: string | undefined) {
