@@ -1,8 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useSocket } from '../hooks/useSocket';
-import { api } from '../services/api';
-import type { Channel, PlaylistItem, PlaybackState } from '../types';
+import { useSocket } from '@/hooks/useSocket';
+import { api } from '@/services/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Play, Pause, SkipForward, RotateCcw, Trash2, Plus, ArrowLeft, Eye, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
+import type { Channel, PlaylistItem, PlaybackState } from '@/types';
 
 export default function AdminChannelPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -11,8 +16,6 @@ export default function AdminChannelPage() {
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
   const [playbackState, setPlaybackState] = useState<PlaybackState | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
-
-  // Add item form
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
 
@@ -55,88 +58,140 @@ export default function AdminChannelPage() {
     setNewTitle('');
     setNewUrl('');
     loadChannel();
+    toast.success('Video added to playlist');
   };
 
   const handleDeleteItem = async (itemId: string) => {
     if (!slug) return;
     await api.playlist.delete(slug, itemId);
     loadChannel();
+    toast.success('Video removed');
   };
 
-  if (!channel) return <div style={{ padding: 20 }}>Loading...</div>;
+  if (!channel) return <div className="flex h-screen items-center justify-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: 20 }}>
-      <Link to="/admin">Back to Dashboard</Link>
-      <h1>{channel.name} — Admin Controls</h1>
-
-      {/* Playback Controls */}
-      <div style={{
-        padding: 16, background: '#f5f5f5', borderRadius: 8, marginBottom: 20,
-      }}>
-        <h2>Playback Controls</h2>
-        <p>
-          Status: <strong>{playbackState?.status || 'stopped'}</strong> |
-          Viewers: <strong>{viewerCount}</strong>
-        </p>
-        {playbackState?.currentItem && (
-          <p>Now Playing: <strong>{playbackState.currentItem.title}</strong></p>
-        )}
-        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-          <button onClick={() => sendCommand('play')}>Play</button>
-          <button onClick={() => sendCommand('pause')}>Pause</button>
-          <button onClick={() => sendCommand('next')}>Next</button>
-          <button onClick={() => sendCommand('seek', { seekTo: 0 })}>Restart</button>
+    <div className="mx-auto max-w-5xl p-6">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link to="/admin">
+            <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">{channel.name}</h1>
+            <p className="text-sm text-muted-foreground">Channel Controls</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Eye className="h-4 w-4" />
+            {viewerCount} watching
+          </div>
+          <Link to={`/channel/${channel.slug}`}>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <ExternalLink className="h-3.5 w-3.5" />
+              View Channel
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Playlist Management */}
-      <div style={{ padding: 16, background: '#f5f5f5', borderRadius: 8, marginBottom: 20 }}>
-        <h2>Playlist</h2>
-        {playlist.map((item, index) => (
-          <div key={item.id} style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: 8, borderBottom: '1px solid #ddd',
-          }}>
-            <div>
-              <span style={{ color: '#888', marginRight: 8 }}>#{index + 1}</span>
-              {item.title}
-              {playbackState?.currentItem?.id === item.id && (
-                <span style={{ marginLeft: 8, color: 'green', fontWeight: 'bold' }}>Playing</span>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Playback Controls */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Playback Controls</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg bg-muted/50 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  playbackState?.status === 'playing'
+                    ? 'bg-green-500/10 text-green-500'
+                    : playbackState?.status === 'paused'
+                    ? 'bg-yellow-500/10 text-yellow-500'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {playbackState?.status || 'stopped'}
+                </span>
+              </div>
+              {playbackState?.currentItem && (
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Now Playing</span>
+                  <span className="text-sm font-medium text-foreground">{playbackState.currentItem.title}</span>
+                </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => sendCommand('setItem', { itemId: item.id })}>Play This</button>
-              <button onClick={() => handleDeleteItem(item.id)} style={{ color: 'red' }}>Delete</button>
+            <div className="flex gap-2">
+              <Button onClick={() => sendCommand('play')} className="flex-1 gap-1.5">
+                <Play className="h-4 w-4" /> Play
+              </Button>
+              <Button variant="outline" onClick={() => sendCommand('pause')} className="flex-1 gap-1.5">
+                <Pause className="h-4 w-4" /> Pause
+              </Button>
+              <Button variant="outline" onClick={() => sendCommand('next')} className="flex-1 gap-1.5">
+                <SkipForward className="h-4 w-4" /> Next
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => sendCommand('seek', { seekTo: 0 })} title="Restart">
+                <RotateCcw className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
-        ))}
+          </CardContent>
+        </Card>
 
-        <h3 style={{ marginTop: 16 }}>Add Video</h3>
-        <form onSubmit={handleAddItem} style={{ display: 'flex', gap: 8 }}>
-          <input
-            type="text"
-            placeholder="Video title"
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            required
-            style={{ flex: 1, padding: 8 }}
-          />
-          <input
-            type="url"
-            placeholder="YouTube URL"
-            value={newUrl}
-            onChange={e => setNewUrl(e.target.value)}
-            required
-            style={{ flex: 1, padding: 8 }}
-          />
-          <button type="submit">Add</button>
-        </form>
+        {/* Playlist */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Playlist</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {playlist.length === 0 && (
+              <p className="py-4 text-center text-sm text-muted-foreground">No videos yet. Add one below.</p>
+            )}
+            {playlist.map((item, index) => (
+              <div key={item.id} className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">#{index + 1}</span>
+                  <span className="text-sm font-medium text-foreground">{item.title}</span>
+                  {playbackState?.currentItem?.id === item.id && (
+                    <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500">Playing</span>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => sendCommand('setItem', { itemId: item.id })}>
+                    <Play className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)} className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            <form onSubmit={handleAddItem} className="flex gap-2 pt-2 border-t border-border">
+              <Input
+                placeholder="Title"
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                required
+                className="flex-1"
+              />
+              <Input
+                type="url"
+                placeholder="YouTube URL"
+                value={newUrl}
+                onChange={e => setNewUrl(e.target.value)}
+                required
+                className="flex-1"
+              />
+              <Button type="submit" size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-
-      <Link to={`/channel/${channel.slug}`}>
-        <button>View Channel as Viewer</button>
-      </Link>
     </div>
   );
 }
