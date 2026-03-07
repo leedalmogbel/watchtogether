@@ -1,10 +1,19 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
 import { db } from './db/index.js';
-import { users, channels, playlistItems, playbackState } from './db/schema.js';
+import { users, channels, playlistItems, playbackState, chatMessages } from './db/schema.js';
 
 async function seed() {
   console.log('Seeding database...');
+
+  // Clear existing data in reverse FK order
+  await db.delete(chatMessages);
+  await db.delete(playbackState);
+  await db.delete(playlistItems);
+  await db.delete(channels);
+  await db.delete(users);
+  console.log('Cleared existing data');
 
   // Create admin user
   const passwordHash = await bcrypt.hash('admin123', 10);
