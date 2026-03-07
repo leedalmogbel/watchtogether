@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import type { Socket } from 'socket.io-client';
-import type { ChatMessage } from '../../types';
+import type { ChatMessage } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Send } from 'lucide-react';
 
 interface ChatProps {
   socket: Socket | null;
@@ -38,39 +41,38 @@ export default function Chat({ socket }: ChatProps) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!socket || !input.trim()) return;
-
     socket.emit('chat:message', { content: input.trim() });
     setInput('');
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: 8,
-        background: '#1a1a1a',
-        color: '#fff',
-        fontSize: 14,
-      }}>
+    <div className="flex h-full flex-col border-t border-border">
+      <div className="border-b border-border px-4 py-2">
+        <h3 className="text-sm font-semibold text-foreground">Live Chat</h3>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+        {messages.length === 0 && (
+          <p className="text-center text-sm text-muted-foreground py-8">No messages yet. Say hello!</p>
+        )}
         {messages.map(msg => (
-          <div key={msg.id} style={{ marginBottom: 4 }}>
-            <strong style={{ color: '#6c9' }}>{msg.displayName}:</strong>{' '}
-            {msg.content}
+          <div key={msg.id} className="text-sm leading-relaxed">
+            <span className="font-semibold text-primary">{msg.displayName}</span>{' '}
+            <span className="text-foreground">{msg.content}</span>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <form onSubmit={handleSubmit} style={{ display: 'flex' }}>
-        <input
-          type="text"
+      <form onSubmit={handleSubmit} className="flex gap-2 border-t border-border p-3">
+        <Input
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Type a message..."
           maxLength={500}
-          style={{ flex: 1, padding: 8, border: 'none', outline: 'none' }}
+          className="flex-1"
         />
-        <button type="submit" style={{ padding: '8px 16px' }}>Send</button>
+        <Button type="submit" size="icon" variant="default">
+          <Send className="h-4 w-4" />
+        </Button>
       </form>
     </div>
   );

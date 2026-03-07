@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PlaybackState } from '../../types';
+import type { PlaybackState } from '@/types';
 
 declare global {
   interface Window {
@@ -112,7 +112,7 @@ export default function VideoPlayer({ playbackState, isAdmin, onTimeUpdate, onSt
   }, [isAdmin, onTimeUpdate]);
 
   return (
-    <div style={{ width: '100%', aspectRatio: '16/9', background: '#000' }}>
+    <div className="w-full aspect-video bg-black rounded-none">
       <div ref={containerRef} />
     </div>
   );
