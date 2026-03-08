@@ -23,11 +23,12 @@ function extractYouTubeId(url: string): string | null {
 export default function VideoPlayer({ playbackState, isAdmin, onTimeUpdate, onStateChange }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 
   // Load YouTube IFrame API
   useEffect(() => {
-    if (window.YT) {
+    if (window.YT && window.YT.Player) {
       setReady(true);
       return;
     }
@@ -41,18 +42,28 @@ export default function VideoPlayer({ playbackState, isAdmin, onTimeUpdate, onSt
 
   // Initialize player
   useEffect(() => {
-    if (!ready || !containerRef.current) return;
+    if (!ready || !containerRef.current || playerRef.current) return;
 
     playerRef.current = new window.YT.Player(containerRef.current, {
-      height: '100%',
       width: '100%',
+      height: '100%',
       playerVars: {
-        autoplay: 0,
+        autoplay: 1,
         controls: isAdmin ? 1 : 0,
         modestbranding: 1,
         rel: 0,
+        playsinline: 1,
       },
       events: {
+        onReady: () => {
+          // If there's a video to play, load it
+          if (playbackState?.currentItem) {
+            const videoId = extractYouTubeId(playbackState.currentItem.videoUrl);
+            if (videoId) {
+              playerRef.current.loadVideoById(videoId, playbackState.currentTime || 0);
+            }
+          }
+        },
         onStateChange: (event: any) => {
           if (isAdmin) {
             const ytState = event.data;
@@ -68,6 +79,7 @@ export default function VideoPlayer({ playbackState, isAdmin, onTimeUpdate, onSt
 
     return () => {
       playerRef.current?.destroy();
+      playerRef.current = null;
     };
   }, [ready, isAdmin]);
 
@@ -76,6 +88,8 @@ export default function VideoPlayer({ playbackState, isAdmin, onTimeUpdate, onSt
     if (!playerRef.current || !playbackState?.currentItem) return;
 
     const player = playerRef.current;
+    if (typeof player.getVideoUrl !== 'function') return;
+
     const videoId = extractYouTubeId(playbackState.currentItem.videoUrl);
     if (!videoId) return;
 
@@ -112,8 +126,8 @@ export default function VideoPlayer({ playbackState, isAdmin, onTimeUpdate, onSt
   }, [isAdmin, onTimeUpdate]);
 
   return (
-    <div className="w-full aspect-video bg-black rounded-none">
-      <div ref={containerRef} />
+    <div ref={wrapperRef} className="relative w-full bg-black" style={{ aspectRatio: '16/9' }}>
+      <div ref={containerRef} className="absolute inset-0" />
     </div>
   );
 }

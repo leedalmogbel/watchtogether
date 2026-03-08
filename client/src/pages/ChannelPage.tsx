@@ -73,9 +73,9 @@ export default function ChannelPage() {
   if (!channel) return <div className="flex h-screen items-center justify-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
-      {/* Left: Video + Controls + Chat */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col lg:flex-row">
+      {/* Left: Video + Controls */}
+      <div className="flex flex-col lg:flex-1 lg:min-w-0">
         <VideoPlayer
           playbackState={playbackState}
           isAdmin={isAdmin}
@@ -102,15 +102,28 @@ export default function ChannelPage() {
           </Button>
         </div>
 
-        {/* Chat */}
-        <div className="flex-1 overflow-hidden">
+        {/* Playlist below video on mobile */}
+        <div className="border-b border-border bg-card lg:hidden">
+          <Playlist items={playlist} playbackState={playbackState} viewerCount={viewerCount} />
+        </div>
+
+        {/* Chat below video on mobile */}
+        <div className="flex-1 overflow-hidden lg:hidden">
           <Chat socket={socket} />
         </div>
       </div>
 
-      {/* Right: Playlist sidebar */}
-      <div className="hidden w-80 flex-col border-l border-border bg-card md:flex">
-        <Playlist items={playlist} playbackState={playbackState} viewerCount={viewerCount} />
+      {/* Right sidebar: Chat + Playlist (desktop) */}
+      <div className="hidden lg:flex w-96 flex-col border-l border-border bg-card">
+        {/* Chat takes most space */}
+        <div className="flex-1 overflow-hidden">
+          <Chat socket={socket} />
+        </div>
+
+        {/* Playlist at bottom */}
+        <div className="h-64 border-t border-border overflow-hidden">
+          <Playlist items={playlist} playbackState={playbackState} viewerCount={viewerCount} />
+        </div>
       </div>
     </div>
   );

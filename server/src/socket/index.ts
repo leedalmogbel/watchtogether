@@ -10,7 +10,7 @@ export let io: Server;
 export function setupSocket(httpServer: HttpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      origin: process.env.CLIENT_URL || /^http:\/\/localhost:(5173|5174)$/,
       methods: ['GET', 'POST'],
     },
   });
@@ -36,6 +36,9 @@ export function setupSocket(httpServer: HttpServer) {
     console.log(`User connected: ${user.userId}`);
 
     socket.on('join:channel', async (slug: string) => {
+      // Skip if already in this channel
+      if (socket.data.channel === slug) return;
+
       // Leave any previous room
       for (const room of socket.rooms) {
         if (room !== socket.id) {

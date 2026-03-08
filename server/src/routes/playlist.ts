@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db/index.js';
-import { playlistItems, channels } from '../db/schema.js';
-import { eq, asc } from 'drizzle-orm';
+import { playlistItems, channels, playbackState } from '../db/schema.js';
+import { eq, and, asc } from 'drizzle-orm';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 import { z } from 'zod';
 
@@ -116,8 +116,23 @@ router.patch('/:itemId', authenticate, requireAdmin, async (req, res) => {
 // Delete playlist item (admin)
 router.delete('/:itemId', authenticate, requireAdmin, async (req, res) => {
   try {
+    const itemId = req.params.itemId as string;
+    const channel = await getChannelBySlug((req.params as SlugParams).slug);
+    if (!channel) {
+      res.status(404).json({ error: 'Channel not found' });
+      return;
+    }
+
+    // Clear currentItemId if this item is currently playing
+    await db.update(playbackState)
+      .set({ currentItemId: null })
+      .where(and(
+        eq(playbackState.channelId, channel.id),
+        eq(playbackState.currentItemId, itemId),
+      ));
+
     const [item] = await db.delete(playlistItems)
-      .where(eq(playlistItems.id, req.params.itemId as string))
+      .where(eq(playlistItems.id, itemId))
       .returning();
 
     if (!item) {
